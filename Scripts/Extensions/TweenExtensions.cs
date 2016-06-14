@@ -1,4 +1,6 @@
-﻿using System;
+﻿#if !NO_DOTWEEN
+
+using System;
 using DG.Tweening;
 
 public static class TweenExtensions
@@ -8,3 +10,5 @@ public static class TweenExtensions
 		return settings.Apply(tween);
 	}
 }
+
+#endif

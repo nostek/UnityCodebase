@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿#if !NO_DOTWEEN
+
+using UnityEngine;
 using System;
 using DG.Tweening;
 
@@ -74,3 +76,5 @@ public class TweenSettings
 		return tween;
 	}
 }
+
+#endif

@@ -1,12 +1,12 @@
-﻿using System;
+﻿#if !NO_DOTWEEN
+
+using System;
 using System.Collections;
 using UnityEngine;
-
-//using DG.Tweening;
+using DG.Tweening;
 
 public class EditorCoroutineTween
 {
-	/*
 	public static EditorCoroutine Run(Tween t)
 	{
 		EditorCoroutineTween ct = new EditorCoroutineTween();
@@ -27,5 +27,6 @@ public class EditorCoroutineTween
 		yield return null;
 		#endif
 	}
-	*/
 }
+
+#endif

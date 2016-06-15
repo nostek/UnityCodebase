@@ -10,7 +10,10 @@ public static class EditorUtils
 	static void ClearEmptyFolders()
 	{
 		Debug.Log("Checking for empty folders");
+
 		ClearEmptyFoldersRec(UnityEngine.Application.dataPath);
+
+		AssetDatabase.Refresh();
 	}
 
 	static bool ClearEmptyFoldersRec(string path)
@@ -40,8 +43,6 @@ public static class EditorUtils
 					Debug.Log("Delete empty folder: " + folders[i]);
 
 					Directory.Delete(folders[i]);
-
-					AssetDatabase.Refresh();
 				}
 			}
 

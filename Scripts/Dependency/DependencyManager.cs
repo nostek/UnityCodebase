@@ -17,6 +17,12 @@ public class DependencyManager
 		session = new Dictionary<Type, Object>();
 	}
 
+	public void Reset()
+	{
+		binds = new Dictionary<Type, object>();
+		session = new Dictionary<Type, object>();
+	}
+
 	public void ResetSession()
 	{
 		session = new Dictionary<Type, Object>();

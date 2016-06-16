@@ -121,6 +121,27 @@ public static class EditorUtils
 			return EditorGUILayout.EnumPopup(label, (Enum)obj);
 		}
 
+		if (clsType == typeof(LayerMask))
+		{
+			int[] values = LayersExtra.AllLayerValues();
+			string[] names = LayersExtra.AllLayerNames();
+
+			LayerMask mask = (LayerMask)obj;
+
+			//Find the selected index from values.
+			int index = 0;
+			for (int i = 0; i < values.Length; i++)
+				if (values[i] == (int)mask)
+				{
+					index = i;
+					break;
+				}
+			
+			int selected = EditorGUILayout.Popup(label, index, names);
+
+			return (LayerMask)values[selected];
+		}
+
 		if (clsType.IsArray)
 		{
 			Rect rectArray = EditorGUILayout.BeginVertical();

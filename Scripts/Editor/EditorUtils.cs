@@ -3,7 +3,6 @@ using UnityEditor;
 using System;
 using System.Reflection;
 using System.IO;
-using System.Text;
 
 public static class EditorUtils
 {
@@ -12,65 +11,6 @@ public static class EditorUtils
 		var logEntries = System.Type.GetType("UnityEditorInternal.LogEntries, UnityEditor.dll");
 		var clearMethod = logEntries.GetMethod("Clear", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public);
 		clearMethod.Invoke(null, null);
-	}
-
-	[MenuItem("Assets/Find Usage", false, 30)]
-	static void FindUsage()
-	{
-		ClearDeveloperConsole();
-
-		UnityEngine.Object[] objs = Selection.objects;
-
-		StringBuilder sb = new StringBuilder();
-
-		for (int i = 0; i < objs.Length; i++)
-		{
-			string guid = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(objs[i]));
-
-			sb.AppendLine("Searching for " + objs[i].name + "...");
-
-			FindUsageRec(sb, guid, UnityEngine.Application.dataPath);
-
-			sb.AppendLine("");
-		}
-
-		Debug.Log(sb.ToString());
-	}
-
-	static void FindUsageRec(StringBuilder sb, string guid, string path)
-	{
-		string[] folders = Directory.GetDirectories(path);
-		string[] files = Directory.GetFiles(path);
-
-		bool hasFolders = (folders != null && folders.Length > 0);
-		bool hasFiles = (files != null && files.Length > 0);
-
-		if (hasFiles)
-		{
-			for (int i = 0; i < files.Length; i++)
-			{
-				bool usable = (	
-				                  files[i].ToLower().EndsWith(".prefab") ||
-				                  files[i].ToLower().EndsWith(".unity") ||
-				                  files[i].ToLower().EndsWith(".controller")
-				              );
-
-				if (!usable)
-					continue;
-
-				string content = File.ReadAllText(files[i]);
-
-				if (!content.StartsWith("%YAML"))
-					continue;
-
-				if (content.Contains("guid: " + guid))
-					sb.AppendLine("Found in: " + files[i]);
-			}
-		}
-
-		if (hasFolders)
-			for (int i = 0; i < folders.Length; i++)
-				FindUsageRec(sb, guid, folders[i]);
 	}
 
 	[MenuItem("Tools/Clear Empty Folders")]

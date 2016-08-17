@@ -84,14 +84,14 @@ public class Parse
 
 	public YieldInstruction CloudCode<T_Request, T_Response>(string function, T_Request req, System.Action<T_Response> onComplete, System.Action<ParseErrorResponse> onError = null) 
 		where T_Request : ParseRequest
-		where T_Response : ParseResponse, new()
+		where T_Response : ParseResponse
 	{
 		return behaviour.StartCoroutine(CoRequest<T_Request, T_Response>(function, req, onComplete, onError));
 	}
 
 	IEnumerator CoRequest<T_Request, T_Response>(string function, T_Request req, System.Action<T_Response> onComplete, System.Action<ParseErrorResponse> onError)
 		where T_Request : ParseRequest
-		where T_Response : ParseResponse, new()
+		where T_Response : ParseResponse
 	{
 		string json = JsonUtility.ToJson(req);
 

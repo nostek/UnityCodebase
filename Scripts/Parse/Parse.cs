@@ -49,16 +49,6 @@ public class Parse
 		
 	}
 
-	class ParseSettings : ScriptableObject
-	{
-		[Multiline]
-		public string AppId = "null";
-		[Multiline]
-		public string RESTKey = "null";
-		[Multiline]
-		public string Host = "null";
-	}
-
 	//Does not change, create in constructor and mark read-only.
 	readonly Dictionary<string, string> Headers;
 

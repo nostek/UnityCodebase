@@ -24,11 +24,26 @@ public class ParseResponse
 public class ParseErrorResponse
 {
 	public int code = 0;
+
 	public string error = null;
+
+	public T Decode<T>()
+	{
+		if (!error.StartsWith("{"))
+			return default(T);
+		
+		return JsonUtility.FromJson<T>(error);
+	}
 }
 
 public class Parse
 {
+	[Serializable]
+	class ParseResponseHandler<T>
+	{
+		public T result = default(T);
+	}
+
 	class ParseDummy : MonoBehaviour
 	{
 		
@@ -124,10 +139,10 @@ public class Parse
 		{
 			Debug.Log("[Parse] Response from '" + function + "' with data: " + www.text);
 
-			T_Response resp = JsonUtility.FromJson<T_Response>(www.text);
+			ParseResponseHandler<T_Response> resp = JsonUtility.FromJson<ParseResponseHandler<T_Response>>(www.text);
 
 			if (onComplete != null)
-				onComplete(resp);
+				onComplete(resp.result);
 		}
 	}
 

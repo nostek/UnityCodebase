@@ -50,11 +50,13 @@ public class Parse
 	}
 
 	//Does not change, create in constructor and mark read-only.
-	readonly Dictionary<string, string> Headers;
-
 	readonly ParseDummy behaviour = null;
 
 	readonly ParseSettings settings = null;
+
+	Dictionary<string, string> headers;
+
+	string sessionId = null;
 
 	private Parse()
 	{
@@ -79,12 +81,28 @@ public class Parse
 		behaviour = go.AddComponent<ParseDummy>();
 		GameObject.DontDestroyOnLoad(go);
 
-		Headers = new Dictionary<string, string>()
+		BuildHeaders();
+	}
+
+	void BuildHeaders()
+	{
+		if (string.IsNullOrEmpty(settings.AppId))
 		{
-			{ "X-Parse-Application-Id", settings.AppId },
-			{ "X-Parse-REST-API-Key", settings.RESTKey },
-			{ "Content-Type", "application/json" }
+			Debug.LogError("App ID is missing in settings.");
+			return;
+		}
+
+		headers = new Dictionary<string, string>()
+		{
+			{ "Content-Type", "application/json" },
+			{ "X-Parse-Application-Id", settings.AppId }
 		};
+
+		if (!string.IsNullOrEmpty(settings.RESTKey))
+			headers.Add("X-Parse-REST-API-Key", settings.RESTKey);
+
+		if (!string.IsNullOrEmpty(sessionId))
+			headers.Add("X-Parse-Session-Token", sessionId);
 	}
 
 	public YieldInstruction CloudCode<T_Request, T_Response>(string function, T_Request req, System.Action<T_Response> onComplete, System.Action<ParseErrorResponse> onError = null) 
@@ -102,7 +120,7 @@ public class Parse
 
 		Debug.Log("[Parse] Request to '" + function + "' with data: " + json);
 
-		WWW www = new WWW(settings.Host + "/functions/" + function, Encoding.UTF8.GetBytes(json), Headers);
+		WWW www = new WWW(settings.Host + "/functions/" + function, Encoding.UTF8.GetBytes(json), headers);
 
 		yield return www;
 
@@ -134,6 +152,20 @@ public class Parse
 			if (onComplete != null)
 				onComplete(resp.result);
 		}
+	}
+
+	public void LogIn(string sessionId)
+	{
+		this.sessionId = sessionId;
+
+		BuildHeaders();
+	}
+
+	public void LogOut()
+	{
+		this.sessionId = null;
+
+		BuildHeaders();
 	}
 
 	#region SINGLETON

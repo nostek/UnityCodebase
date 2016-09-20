@@ -9,13 +9,13 @@ using UnityEditor;
 #endif
 
 [Serializable]
-public class ParseRequest
+public abstract class ParseRequest
 {
 
 }
 
 [Serializable]
-public class ParseResponse
+public abstract class ParseResponse
 {
 
 }

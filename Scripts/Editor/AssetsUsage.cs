@@ -13,7 +13,7 @@ public static class AssetsUsage
 		public List<string> Files;
 	}
 
-	[MenuItem("Assets/Check Asset Usage", false, 30)]
+	[MenuItem("Assets/Find Where Used In Project", false, 30)]
 	static void CheckUsage()
 	{
 		float start = Time.realtimeSinceStartup;
@@ -29,9 +29,26 @@ public static class AssetsUsage
 			models[i] = new UsageModel(){ Guid = string.Format("guid: {0}", guid), Files = new List<string>() };
 		}
 
-		CheckUsageRecursive(models, UnityEngine.Application.dataPath);
+		List<string> files = new List<string>();
+		files.AddRange(Directory.GetFiles(UnityEngine.Application.dataPath, "*.prefab", SearchOption.AllDirectories));
+		files.AddRange(Directory.GetFiles(UnityEngine.Application.dataPath, "*.unity", SearchOption.AllDirectories));
+		files.AddRange(Directory.GetFiles(UnityEngine.Application.dataPath, "*.controller", SearchOption.AllDirectories));
+
+		for (int i = 0; i < files.Count; i++)
+		{
+			string content = File.ReadAllText(files[i]);
+
+			if (!content.StartsWith("%YAML"))
+				continue;
+
+			for (int j = 0; j < models.Length; j++)
+				if (content.Contains(models[j].Guid))
+					models[j].Files.Add(files[i]);
+		}
 
 		StringBuilder sb = new StringBuilder();
+		sb.AppendLine("Search Report");
+		sb.AppendLine("");
 
 		for (int i = 0; i < models.Length; i++)
 		{
@@ -48,42 +65,5 @@ public static class AssetsUsage
 		sb.AppendFormat("Elapsed time: {0}\n", (stop - start));
 
 		Debug.Log(sb.ToString());
-	}
-
-	static void CheckUsageRecursive(UsageModel[] models, string path)
-	{
-		string[] folders = Directory.GetDirectories(path);
-		string[] files = Directory.GetFiles(path);
-
-		bool hasFolders = (folders != null && folders.Length > 0);
-		bool hasFiles = (files != null && files.Length > 0);
-
-		if (hasFiles)
-		{
-			for (int i = 0; i < files.Length; i++)
-			{
-				bool usable = (	
-				                  files[i].ToLower().EndsWith(".prefab") ||
-				                  files[i].ToLower().EndsWith(".unity") ||
-				                  files[i].ToLower().EndsWith(".controller")
-				              );
-
-				if (!usable)
-					continue;
-
-				string content = File.ReadAllText(files[i]);
-
-				if (!content.StartsWith("%YAML"))
-					continue;
-
-				for (int j = 0; j < models.Length; j++)
-					if (content.Contains(models[j].Guid))
-						models[j].Files.Add(files[i]);
-			}
-		}
-
-		if (hasFolders)
-			for (int i = 0; i < folders.Length; i++)
-				CheckUsageRecursive(models, folders[i]);
 	}
 }

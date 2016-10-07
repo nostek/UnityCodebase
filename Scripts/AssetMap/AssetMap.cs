@@ -44,6 +44,19 @@ public abstract class AssetMap<T_Enum, T_Class> : AssetMapBase
 		return typeof(T_Class);
 	}
 
+	public List<KeyValuePair<T_Enum, T_Class>> KeyValues()
+	{
+		List<KeyValuePair<T_Enum, T_Class>> ret = new List<KeyValuePair<T_Enum, T_Class>>(keys.Count);
+
+		for (int i = 0; i < keys.Count; i++)
+			ret.Add(new KeyValuePair<T_Enum, T_Class>(
+					(T_Enum)Enum.ToObject(GetMapEnum(), keys[i]),
+					values[i]
+				));
+
+		return ret;
+	}
+
 	public override System.Object GetMap(int key)
 	{
 		int index = GetKeyIndex(key);

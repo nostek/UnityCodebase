@@ -61,7 +61,7 @@ public class AssetMapBaseEditor : Editor
 			if (!(enumId >= fromId && enumId <= toId))
 				continue;
 
-			map.SetMap(enumId, EditorUtils.DrawElement(keys[i], classType, map.GetMap(enumId)));
+			map.SetMap(enumId, EditorCustomDrawer.Draw(keys[i], classType, map.GetMap(enumId)));
 		}
 
 		bool changed = EditorGUI.EndChangeCheck();

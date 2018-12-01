@@ -1,43 +1,26 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Linq;
 
 public class DependencyManager
 {
 	static DependencyManager instance;
 
 	Dictionary<Type, Object> binds;
-	Dictionary<Type, Object> session;
 
 	private DependencyManager()
 	{
 		instance = this;
 
 		binds = new Dictionary<Type, Object>();
-		session = new Dictionary<Type, Object>();
 	}
 
-	public void Reset()
-	{
-		binds = new Dictionary<Type, object>();
-		session = new Dictionary<Type, object>();
-	}
-
-	public void ResetSession()
-	{
-		session = new Dictionary<Type, Object>();
-	}
-
-	public T Get<T>()
+	public T Get<T>() where T : class
 	{
 		Object dic = null;
 
 		if (binds.TryGetValue(typeof(T), out dic))
-		{
-			return (T)dic;
-		}
-
-		if (session.TryGetValue(typeof(T), out dic))
 		{
 			return (T)dic;
 		}
@@ -47,42 +30,37 @@ public class DependencyManager
 		return default(T);
 	}
 
-	public void Bind<T>(T obj)
-	{
-		if (obj == null)
-			UnityEngine.Debug.LogError("Trying to bind null: " + typeof(T));
-		
-		binds.Add(obj.GetType(), obj);
-	}
-
-	public void BindSession<T>(T obj)
+	public DependencyManager Bind<T>(T obj) where T : class
 	{
 		if (obj == null)
 			UnityEngine.Debug.LogError("Trying to bind null: " + typeof(T));
 
-		session.Add(obj.GetType(), obj);
+		binds.Add(typeof(T), obj);
+
+		return this;
 	}
 
-	public void BindComplete()
+	public DependencyManager Unbind<T>() where T : class
 	{
-		foreach (KeyValuePair<Type, Object> kvp in binds)
-			if (kvp.Value is IInjectable)
-				((IInjectable)kvp.Value).OnBindComplete();
+		binds.Remove(typeof(T));
+		return this;
+	}
 
-		foreach (KeyValuePair<Type, Object> kvp in session)
-			if (kvp.Value is IInjectable)
-				((IInjectable)kvp.Value).OnBindComplete();
+	public DependencyManager Unbind(Type t)
+	{
+		binds.Remove(t);
+		return this;
 	}
 
 	public void Apply(Object obj)
 	{
 		FieldInfo[] fields = obj.GetType().GetFields(
-			                     BindingFlags.FlattenHierarchy |
-			                     BindingFlags.Instance |
-			                     BindingFlags.Public |
-			                     BindingFlags.NonPublic |
-			                     BindingFlags.Static
-		                     );
+								 BindingFlags.FlattenHierarchy |
+								 BindingFlags.Instance |
+								 BindingFlags.Public |
+								 BindingFlags.NonPublic |
+								 BindingFlags.Static
+							 );
 
 		foreach (FieldInfo info in fields)
 		{
@@ -93,13 +71,9 @@ public class DependencyManager
 				{
 					info.SetValue(obj, dic);
 				}
-				else if (session.TryGetValue(info.FieldType, out dic))
-				{
-					info.SetValue(obj, dic);
-				}
 				else
 				{
-					UnityEngine.Debug.LogWarning("Could not bind type: " + info.FieldType);
+					UnityEngine.Debug.LogWarning("Could not inject type: " + info.FieldType);
 				}
 			}
 		}
@@ -111,7 +85,7 @@ public class DependencyManager
 		{
 			if (instance == null)
 				instance = new DependencyManager();
-			
+
 			return instance;
 		}
 	}

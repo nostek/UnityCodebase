@@ -1,16 +1,17 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 using UnityEditor;
-using System;
-using System.Collections.Generic;
 using System.Text;
-using System.IO;
 
-public static class AssetsUsage
+public class AssetsUsage : AssetPostprocessor
 {
-	class UsageModel
+	static string[] allGuids = null;
+	static Dictionary<string, List<string>> database = null;
+
+	static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
 	{
-		public string Guid;
-		public List<string> Files;
+		allGuids = null;
+		database = null;
 	}
 
 	[MenuItem("Assets/Find Where Used In Project", false, 30)]
@@ -18,52 +19,89 @@ public static class AssetsUsage
 	{
 		float start = Time.realtimeSinceStartup;
 
-		UnityEngine.Object[] objs = Selection.objects;
-
-		UsageModel[] models = new UsageModel[objs.Length];
-
-		for (int i = 0; i < objs.Length; i++)
-		{
-			string guid = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(objs[i]));
-
-			models[i] = new UsageModel(){ Guid = string.Format("guid: {0}", guid), Files = new List<string>() };
-		}
-
-		List<string> files = new List<string>();
-		files.AddRange(Directory.GetFiles(UnityEngine.Application.dataPath, "*.prefab", SearchOption.AllDirectories));
-		files.AddRange(Directory.GetFiles(UnityEngine.Application.dataPath, "*.unity", SearchOption.AllDirectories));
-		files.AddRange(Directory.GetFiles(UnityEngine.Application.dataPath, "*.controller", SearchOption.AllDirectories));
-
-		for (int i = 0; i < files.Count; i++)
-		{
-			string content = File.ReadAllText(files[i]);
-
-			if (!content.StartsWith("%YAML"))
-				continue;
-
-			for (int j = 0; j < models.Length; j++)
-				if (content.Contains(models[j].Guid))
-					models[j].Files.Add(files[i]);
-		}
+		BuildDatabase();
 
 		StringBuilder sb = new StringBuilder();
 		sb.AppendLine("Search Report");
 		sb.AppendLine("");
 
-		for (int i = 0; i < models.Length; i++)
+		UnityEngine.Object[] objs = Selection.objects;
+		foreach (var obj in objs)
 		{
-			sb.AppendFormat("Searching for {0}...\n", objs[i].name);
+			string path = AssetDatabase.GetAssetPath(obj);
+			string guid = AssetDatabase.AssetPathToGUID(path);
 
-			for (int j = 0; j < models[i].Files.Count; j++)
-				sb.AppendFormat("Found in: {0}\n", models[i].Files[j]);
+			sb.AppendFormat("Searching for {0}...\n", obj.name);
 
-			sb.AppendLine("");
+			List<string> users = null;
+			if (database.TryGetValue(guid, out users))
+				foreach (var u in users)
+					sb.AppendFormat("Found in: {0}\n", AssetDatabase.GUIDToAssetPath(u));
+
+			sb.AppendLine();
 		}
+
+		/*
+		Log.D("The following assets are not used:");
+		foreach (var guid in allGuids)
+		{
+			var path = AssetDatabase.GUIDToAssetPath(guid);
+			var type = AssetDatabase.GetMainAssetTypeAtPath(path);
+
+			if (type == typeof(UnityEditor.DefaultAsset))
+				continue;
+
+			if (!database.ContainsKey(guid))
+				Log.D(path);
+		}
+		*/
 
 		float stop = Time.realtimeSinceStartup;
 
 		sb.AppendFormat("Elapsed time: {0}\n", (stop - start));
 
 		Debug.Log(sb.ToString());
+	}
+
+	static void BuildDatabase()
+	{
+		//Already built database.
+		if (allGuids != null && database != null)
+			return;
+
+		EditorUtility.DisplayProgressBar("Building database", "Caching dependencies..", 0f);
+
+		allGuids = AssetDatabase.FindAssets("t:object");
+
+		database = new Dictionary<string, List<string>>();
+
+		float step = 1f / (float)allGuids.Length;
+		float progress = 0f;
+
+		for (int i = 0; i < allGuids.Length; i++)
+		{
+			var guid = allGuids[i];
+			var dependencies = AssetDatabase.GetDependencies(AssetDatabase.GUIDToAssetPath(guid), false);
+
+			foreach (var dep in dependencies)
+			{
+				var g = AssetDatabase.AssetPathToGUID(dep);
+
+				List<string> refs = null;
+				if (!database.TryGetValue(g, out refs))
+				{
+					refs = new List<string>();
+					database.Add(g, refs);
+				}
+
+				refs.Add(guid);
+			}
+
+			progress += step;
+
+			EditorUtility.DisplayProgressBar("Building database", "Caching dependencies..", progress);
+		}
+
+		EditorUtility.ClearProgressBar();
 	}
 }

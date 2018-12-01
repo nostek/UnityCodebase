@@ -5,7 +5,7 @@ using System.Collections.Generic;
 [Serializable]
 public abstract class AssetMap<T_Enum, T_Class> : AssetMapBase
 	where T_Enum : IConvertible
-	where T_Class : new()
+	where T_Class : class
 {
 	[SerializeField]
 	[HideInInspector]
@@ -21,17 +21,12 @@ public abstract class AssetMap<T_Enum, T_Class> : AssetMapBase
 			if (keys[i] == key)
 				return i;
 
-		return -1;		
+		return -1;
 	}
 
 	System.Object GetDefault()
 	{
 		return default(T_Class);
-	}
-
-	System.Object NewDefault()
-	{
-		return new T_Class();
 	}
 
 	public override Type GetMapEnum()
@@ -66,7 +61,7 @@ public abstract class AssetMap<T_Enum, T_Class> : AssetMapBase
 
 		if (GetMapType().IsClass && GetMapType().BaseType != typeof(UnityEngine.Object))
 		{
-			return NewDefault();
+			return Activator.CreateInstance(GetMapType());
 		}
 
 		return GetDefault();
@@ -80,7 +75,7 @@ public abstract class AssetMap<T_Enum, T_Class> : AssetMapBase
 		{
 			if (values[index] != null && values[index].Equals(obj))
 				return;
-			
+
 			values[index] = (T_Class)obj;
 
 			return;
